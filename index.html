@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(145deg, #76a6ee 0%, #5feecf 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: system-ui, -apple-system, 'Comic Sans', Roboto, 'Helvetica Neue', sans-serif;
+            padding: 1rem;
+            margin: 0;
+        }
+
+        .todo-card {
+            background: rgba(27, 221, 255, 0.8);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border-radius: 32px;
+            box-shadow: 0 25px 45px -12px rgba(0, 10, 30, 0.25),
+                        inset 0 1px 2px rgba(255, 255, 255, 0.7);
+            width: 100%;
+            max-width: 550px;
+            padding: 2rem 1.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* Animated heading styles */
+        .heading-container {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            perspective: 1000px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #1e293b, #3b82f6, #5feecf);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            word-spacing: 8px;
+            animation: gradientFlow 3s ease infinite, float 3s ease-in-out infinite;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            display: inline-block;
+            padding: 0 20px;
+            position: relative;
+            transform-style: preserve-3d;
+        }
+
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes float {
+            0%, 100% { 
+                transform: translateY(0) rotateX(0deg); 
+            }
+            25% { 
+                transform: translateY(-5px) rotateX(2deg); 
+            }
+            75% { 
+                transform: translateY(5px) rotateX(-2deg); 
+            }
+        }
+
+        /* Animated underline */
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #1e293b, #3b82f6, #5feecf);
+            border-radius: 4px;
+            animation: underlineGrow 2s ease-in-out infinite;
+            box-shadow: 0 0 10px #3b82f6;
+        }
+
+        @keyframes underlineGrow {
+            0%, 100% { 
+                width: 0;
+                opacity: 0.5;
+            }
+            50% { 
+                width: 80%;
+                opacity: 1;
+            }
+        }
+
+        /* Pencil animation for decoration */
+        .heading-decoration {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 5px;
+            font-size: 1.5rem;
+            animation: bounce 2s ease infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        .heading-decoration span {
+            display: inline-block;
+            animation: spin 4s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .subhead {
+            color: #475569;
+            margin-bottom: 1.8rem;
+            font-weight: 400;
+            border-left: 3px solid #3b82f6;
+            padding-left: 1rem;
+            font-size: 0.95rem;
+        }
+
+        /* ——— input area ——— */
+        .add-section {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 2.2rem;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #taskInput {
+            flex: 1;
+            padding: 16px 20px;
+            border: none;
+            background: #ffffffd9;
+            border-radius: 60px;
+            font-size: 1rem;
+            box-shadow: 0 8px 18px -8px rgba(0, 20, 40, 0.15), inset 0 1px 3px #ffffff, inset 0 1px 4px rgba(0,0,0,0.02);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            transition: all 0.2s ease;
+        }
+
+        #taskInput:focus {
+            outline: none;
+            background: #ffffff;
+            box-shadow: 0 8px 20px -10px #3b82f680, 0 0 0 3px rgba(59,130,246,0.2);
+        }
+
+        #addBtn {
+            background: #1e293b;
+            border: none;
+            color: white;
+            font-weight: 500;
+            font-size: 1rem;
+            padding: 0 28px;
+            border-radius: 60px;
+            cursor: pointer;
+            box-shadow: 0 12px 18px -10px #1e293b70;
+            letter-spacing: 0.3px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            border: 1px solid #ffffff30;
+        }
+
+        #addBtn:hover {
+            background: #2d3b50;
+            transform: scale(1.02);
+            box-shadow: 0 16px 22px -10px #0f172a;
+        }
+
+        #addBtn:active {
+            transform: scale(0.98);
+            background: #0f172a;
+        }
+
+        /* ——— task list ——— */
+        .task-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 6px;
+            max-height: 380px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .task-list li {
+            background: #ffffffd1;
+            backdrop-filter: blur(2px);
+            border-radius: 50px;
+            padding: 6px 6px 6px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 6px 14px -8px #00000020, 0 0 0 1px #ffffffcb inset;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            animation: taskAppear 0.3s ease-out;
+        }
+
+        @keyframes taskAppear {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .task-list li:hover {
+            background: #ffffff;
+            box-shadow: 0 10px 22px -12px #1e293b70, 0 0 0 1px #ffffff inset;
+            transform: scale(1.02) translateY(-2px);
+        }
+
+        /* custom checkbox (complete toggle) */
+        .task-check {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #cbd5e1;
+            cursor: pointer;
+            transition: 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .task-check:checked {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            box-shadow: 0 6px 10px -4px #3b82f6;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+            background-size: 14px;
+            background-position: center;
+            background-repeat: no-repeat;
+            transform: scale(1.1);
+        }
+
+        .task-check:checked + .task-text {
+            animation: completePulse 0.3s ease;
+        }
+
+        @keyframes completePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .task-text {
+            flex: 1;
+            font-size: 1.1rem;
+            font-weight: 470;
+            color: #0f172a;
+            word-break: break-word;
+            padding: 10px 0;
+            transition: color 0.2s, text-decoration 0.2s, transform 0.2s;
+        }
+
+        /* completed task styling */
+        .task-text.completed {
+            text-decoration: line-through;
+            color: #94a3b8;
+            font-weight: 400;
+            text-decoration-color: #3b82f6;
+            text-decoration-thickness: 2px;
+        }
+
+        /* remove button */
+        .delete-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            line-height: 1;
+            width: 48px;
+            height: 48px;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            background: #ffffff;
+            border: 1px solid #f8fafc;
+        }
+
+        .delete-btn:hover {
+            background: #fee2e2;
+            color: #b91c1c;
+            transform: scale(1.08) rotate(90deg);
+            box-shadow: 0 4px 10px -4px #b91c1c70;
+        }
+
+        .delete-btn:active {
+            transform: scale(0.96) rotate(90deg);
+            background: #fecaca;
+        }
+
+        /* empty state with animation */
+        .empty-message {
+            text-align: center;
+            color: #64748b;
+            padding: 2rem 1rem;
+            background: #f1f5f9b3;
+            border-radius: 60px;
+            font-size: 1rem;
+            border: 1px dashed #cbd5e1;
+            backdrop-filter: blur(2px);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                opacity: 0.8;
+                transform: scale(1);
+            }
+            50% { 
+                opacity: 1;
+                transform: scale(1.02);
+                border-color: #3b82f6;
+            }
+        }
+
+        /* scrollbar */
+        .task-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .task-list::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .task-list::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+
+        .task-list::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <div class="todo-card">
+        <!-- Animated heading section -->
+        <div class="heading-container">
+            <h1>To-Do List</h1>
+            <div class="heading-decoration">
+                <span>✏️</span>
+                <span>📝</span>
+                <span>✓</span>
+                <span>⭐</span>
+                <span>✨</span>
+            </div>
+        </div>
+        
+        <div class="subhead">add · do · delete — instant</div>
+
+        <div class="add-section">
+            <input type="text" id="taskInput" placeholder="e.g., Tomorrow go to Gym" autofocus>
+            <button id="addBtn">➕ Add</button>
+        </div>
+
+        <!-- list container -->
+        <ul class="task-list" id="taskList">
+            <!-- example static item to show style, but it's fully dynamic -->
+            <li class="empty-message">✨ Your tasks appear here</li>
+        </ul>
+    </div>
+
+    <script>
+        (function() {
+            // ----- DOM elements -----
+            const taskInput = document.getElementById('taskInput');
+            const addBtn = document.getElementById('addBtn');
+            const taskList = document.getElementById('taskList');
+
+            // ----- Remove empty placeholder if tasks exist -----
+            function removeEmptyPlaceholder() {
+                const emptyPlaceholders = document.querySelectorAll('#taskList .empty-message');
+                if (emptyPlaceholders.length > 0) {
+                    // if there is any real task, delete all empty messages
+                    const realTasks = document.querySelectorAll('#taskList li:not(.empty-message)');
+                    if (realTasks.length > 0) {
+                        emptyPlaceholders.forEach(el => el.remove());
+                    }
+                }
+            }
+
+            // ----- Add empty placeholder if no tasks (for better UX) -----
+            function showEmptyPlaceholderIfNeeded() {
+                const realTasks = document.querySelectorAll('#taskList li:not(.empty-message)');
+                if (realTasks.length === 0) {
+                    // only add if not already present
+                    const existingEmpty = document.querySelector('#taskList .empty-message');
+                    if (!existingEmpty) {
+                        const emptyLi = document.createElement('li');
+                        emptyLi.className = 'empty-message';
+                        emptyLi.textContent = '✨ Your tasks appear here';
+                        taskList.appendChild(emptyLi);
+                    }
+                }
+            }
+
+            // ----- core function to create a new task item -----
+            function createTaskItem(taskText) {
+                const li = document.createElement('li');
+
+                // checkbox (complete toggle)
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'task-check';
+
+                // span with task text
+                const textSpan = document.createElement('span');
+                textSpan.className = 'task-text';
+                textSpan.textContent = taskText;
+
+                // delete button
+                const delBtn = document.createElement('button');
+                delBtn.className = 'delete-btn';
+                delBtn.innerHTML = '✕'; // multiplication sign
+                delBtn.setAttribute('aria-label', 'Remove task');
+
+                // ----- EVENT: toggle completed class on textSpan when checkbox changes -----
+                checkbox.addEventListener('change', function(e) {
+                    if (checkbox.checked) {
+                        textSpan.classList.add('completed');
+                        // Add celebration animation on complete
+                        li.style.animation = 'completePulse 0.3s ease';
+                        setTimeout(() => {
+                            li.style.animation = '';
+                        }, 300);
+                    } else {
+                        textSpan.classList.remove('completed');
+                    }
+                });
+
+                // ----- EVENT: delete task (remove li) -----
+                delBtn.addEventListener('click', function(e) {
+                    e.stopPropagation(); // avoid any weirdness
+                    
+                    // Add fade out animation before removal
+                    li.style.animation = 'taskAppear 0.3s ease reverse';
+                    setTimeout(() => {
+                        li.remove();
+
+                        // clean up any empty placeholder logic
+                        removeEmptyPlaceholder();
+                        showEmptyPlaceholderIfNeeded();
+                    }, 200);
+                });
+
+                // assemble list item
+                li.appendChild(checkbox);
+                li.appendChild(textSpan);
+                li.appendChild(delBtn);
+
+                return li;
+            }
+
+            // ----- function to append a new task from input value -----
+            function addTaskFromInput() {
+                const rawText = taskInput.value.trim();
+                if (rawText === '') {
+                    // optional tiny feedback: gentle shake or alert, but we keep it quiet
+                    taskInput.style.border = '2px solid #f87171';
+                    taskInput.style.animation = 'shake 0.3s ease';
+                    setTimeout(() => {
+                        taskInput.style.border = '';
+                        taskInput.style.animation = '';
+                    }, 300);
+                    return;
+                }
+
+                // remove any empty placeholder before adding (if exists)
+                removeEmptyPlaceholder();
+
+                // create new task item
+                const newTask = createTaskItem(rawText);
+
+                // append to list
+                taskList.appendChild(newTask);
+
+                // clear input & focus
+                taskInput.value = '';
+                taskInput.focus();
+
+                // if there was any empty placeholder lingering, it's already removed
+                // but ensure no duplicate empty
+                showEmptyPlaceholderIfNeeded(); // will only add if zero tasks, but we just added one, so normally not needed
+                // but we call it anyway to be safe (won't add because realTasks >0)
+            }
+
+            // Add shake animation keyframes
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    75% { transform: translateX(5px); }
+                }
+            `;
+            document.head.appendChild(style);
+
+            // ----- ADD event: click on Add button -----
+            addBtn.addEventListener('click', addTaskFromInput);
+
+            // ----- ADD event: press Enter in input field -----
+            taskInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' || e.keyCode === 13) {
+                    e.preventDefault();
+                    addTaskFromInput();
+                }
+            });
+
+            // ----- initialise: remove static example and show empty placeholder (already there in html) -----
+            // But there is a static <li class="empty-message"> in HTML. We'll keep it, but we must ensure
+            // that if user adds tasks, it gets removed. removeEmptyPlaceholder handles that.
+            // However that static item will remain until first addition. That's fine.
+
+            // Edge: If someone tries to delete placeholder? Not possible because no delete button on it.
+            // But if user adds task and later deletes all, we show placeholder again via showEmptyPlaceholderIfNeeded
+
+            // To be thorough, we also handle the case where the last task is deleted:
+            // We already call showEmptyPlaceholderIfNeeded inside delBtn click (after removal).
+            // But we also need to call it after any potential bulk removal? we have none. So fine.
+
+            // also extra: if the user somehow deletes placeholder by mistake? no.
+
+            // Because we started with static placeholder, we need to allow it to be removed automatically
+            // as soon as first task is added (done: removeEmptyPlaceholder inside addTaskFromInput)
+
+            // One more guard: when you delete a task, we call removeEmptyPlaceholder (unnecessary but safe)
+            // and then showEmptyPlaceholderIfNeeded. That will add placeholder if 0 tasks.
+
+            // Let's also add a small event if tasks are modified in console? Not needed.
+
+            // If there is any scenario where after initial load the placeholder count is correct.
+
+            // OPTIONAL: demo of pre-adding two example tasks? Not required, but could be nice.
+            // To satisfy "dynamic", we can add two default tasks to show functionality. But the prompt doesn't forbid.
+            // Let's add two small example tasks so the app doesn't feel empty on first load.
+            // But the empty placeholder is there. However it's better to showcase with actual tasks?
+            // I'll add two sample tasks for better UX and to demonstrate marking/removal immediately.
+            // But also respect that some may want empty placeholder. I'll add commented code? No — better to start with
+            // real examples to show functionality. Let's seed two tasks programmatically after a tiny delay
+            // to ensure DOM is ready and placeholder gets replaced.
+            // We'll do it inside setTimeout to not interfere with initial render.
+            setTimeout(() => {
+                // If there are no tasks (only placeholder) we add two examples.
+                const realOnLoad = document.querySelectorAll('#taskList li:not(.empty-message)');
+                if (realOnLoad.length === 0) {
+                    // remove the static placeholder
+                    removeEmptyPlaceholder();
+                    // add two tasks
+                    const task1 = createTaskItem('Review DOM manipulation');
+                    const task2 = createTaskItem('Style with love ✨');
+                    taskList.appendChild(task1);
+                    taskList.appendChild(task2);
+                    // mark second as completed just for demo (optional)
+                    // (we can leave it open)
+                }
+                // if for some reason no placeholder and no tasks, show placeholder
+                showEmptyPlaceholderIfNeeded();
+            }, 20);
+        })();
+    </script>
+</body>
+</html>
